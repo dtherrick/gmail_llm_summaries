@@ -3,10 +3,9 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Dict
 from auth import get_gmail_service
-from get_starred_emails import get_starred_emails
+from get_emails import get_label_id, get_emails_by_label
 from llm import (
     prepare_email_documents,
-    create_vector_store,
     analyze_themes,
     generate_overview,
     create_vector_store_with_monitoring,
@@ -80,7 +79,15 @@ def main():
     # Fetch emails button
     if st.button("Fetch Starred Emails"):
         with st.spinner("Fetching starred emails..."):
-            messages = get_starred_emails(st.session_state.gmail_service)
+            label_name = "forLLM"
+            label_id = get_label_id(st.session_state.gmail_service, label_name)
+            if not label_id:
+                st.warning(f"Label '{label_name}' not found.")
+                return
+            else:
+                messages = get_emails_by_label(
+                    st.session_state.gmail_service, labels=label_id
+                )
 
             if messages:
                 # Process emails and store in session state

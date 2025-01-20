@@ -9,8 +9,8 @@ from pathlib import Path
 # If modifying these scopes, delete the file token.pickle
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
-creds_path = Path(__file__).parent.parent.parent / "credentials.json"
-token_path = Path(__file__).parent.parent.parent / "token.pickle"
+creds_path = Path("~/Data/gmail_llm_summaries").expanduser() / "credentials.json"
+token_path = Path("~/Data/gmail_llm_summaries").expanduser() / "token.pickle"
 
 
 def get_gmail_service():
