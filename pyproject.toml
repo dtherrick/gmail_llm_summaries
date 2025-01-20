@@ -1,0 +1,32 @@
+[project]
+name = "gmail-llm-summaries"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Damian Herrick", email = "damian.herrick@gmail.com" }
+]
+requires-python = ">=3.13.1"
+dependencies = [
+    "chromadb>=0.6.3",
+    "google-api-python-client>=2.159.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.1",
+    "langchain-ollama>=0.2.2",
+    "langchain>=0.3.14",
+    "langchain-community>=0.3.14",
+    "ollama>=0.4.6",
+    "pandas>=2.2.3",
+    "streamlit>=1.41.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+    "pytest>=8.3.4",
+    "ruff>=0.9.1",
+]
