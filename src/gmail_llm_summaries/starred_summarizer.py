@@ -1,10 +1,15 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-from typing import List, Dict
-from auth import get_gmail_service
-from get_emails import get_label_id, get_emails_by_label
-from llm import (
+
+# from datetime import datetime
+from typing import Dict
+from gmail_llm_summaries.auth import get_gmail_service
+from gmail_llm_summaries.get_emails import (
+    get_label_id,
+    get_emails_by_label,
+    get_emails_by_date_range,
+)
+from gmail_llm_summaries.llm import (
     prepare_email_documents,
     analyze_themes,
     generate_overview,
@@ -14,27 +19,16 @@ from llm import (
 
 def extract_email_details(service, message) -> Dict:
     """Extract relevant details from email message"""
-    msg = (
-        service.users()
-        .messages()
-        .get(userId="me", id=message["id"], format="full")
-        .execute()
-    )
+    msg = service.users().messages().get(userId="me", id=message["id"], format="full").execute()
     headers = msg["payload"]["headers"]
 
     # Extract headers
-    subject = next(
-        (h["value"] for h in headers if h["name"].lower() == "subject"), "No Subject"
-    )
-    sender = next(
-        (h["value"] for h in headers if h["name"].lower() == "from"), "Unknown"
-    )
+    subject = next((h["value"] for h in headers if h["name"].lower() == "subject"), "No Subject")
+    sender = next((h["value"] for h in headers if h["name"].lower() == "from"), "Unknown")
     try:
-        date_str = next(
-            (h["value"] for h in headers if h["name"].lower() == "date"), ""
-        )
+        date_str = next((h["value"] for h in headers if h["name"].lower() == "date"), "")
         date = pd.to_datetime(date_str).strftime("%Y-%m-%d") if date_str else "Unknown"
-    except Exception as e:
+    except Exception:
         date = "Unknown"
 
     # Extract body (simplified version - you might want to handle different payload types)
@@ -76,6 +70,37 @@ def main():
             st.error(f"Failed to connect to Gmail: {e}")
             return
 
+    # Date pickers for selecting date range
+    st.subheader("Select Date Range")
+    start_date = st.date_input("Start Date")
+    end_date = st.date_input("End Date")
+
+    # Fetch emails by date range button
+    if st.button("Fetch Emails by Date Range"):
+        with st.spinner("Fetching emails..."):
+            try:
+                messages = get_emails_by_date_range(
+                    st.session_state.gmail_service, start_date, end_date
+                )
+                if messages:
+                    # Process emails and store in session state
+                    emails = []
+                    progress_bar = st.progress(0)
+
+                    for i, message in enumerate(messages):
+                        email_details = extract_email_details(
+                            st.session_state.gmail_service, message
+                        )
+                        emails.append(email_details)
+                        progress_bar.progress((i + 1) / len(messages))
+
+                    st.session_state.emails = emails
+                    st.success(f"Found {len(emails)} emails in the selected date range!")
+                else:
+                    st.warning("No emails found in the selected date range.")
+            except Exception as e:
+                st.error(f"Error fetching emails: {e}")
+
     # Fetch emails button
     if st.button("Fetch Starred Emails"):
         with st.spinner("Fetching starred emails..."):
@@ -85,9 +110,7 @@ def main():
                 st.warning(f"Label '{label_name}' not found.")
                 return
             else:
-                messages = get_emails_by_label(
-                    st.session_state.gmail_service, labels=label_id
-                )
+                messages = get_emails_by_label(st.session_state.gmail_service, labels=label_id)
 
             if messages:
                 # Process emails and store in session state
@@ -95,9 +118,7 @@ def main():
                 progress_bar = st.progress(0)
 
                 for i, message in enumerate(messages):
-                    email_details = extract_email_details(
-                        st.session_state.gmail_service, message
-                    )
+                    email_details = extract_email_details(st.session_state.gmail_service, message)
                     emails.append(email_details)
                     progress_bar.progress((i + 1) / len(messages))
 
@@ -119,6 +140,10 @@ def main():
             st.metric("Date Range", f"{df['date'].min()} to {df['date'].max()}")
         with col3:
             st.metric("Unique Senders", df["sender"].nunique())
+
+        # email dataframe display
+        st.subheader("Email Data")
+        st.dataframe(df)
 
         # Email selection and summarization
         st.subheader("Email Browser")

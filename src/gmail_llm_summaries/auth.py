@@ -1,7 +1,8 @@
 import os.path
 import pickle
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
+
+# from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from pathlib import Path
@@ -23,7 +24,8 @@ def get_gmail_service():
     # If there are no (valid) credentials available, let the user log in
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            request = GoogleRequest()
+            creds.refresh(request)
         else:
             flow = InstalledAppFlow.from_client_secrets_file(creds_path, SCOPES)
             creds = flow.run_local_server(port=0)

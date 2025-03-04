@@ -19,6 +19,7 @@ dependencies = [
     "pandas>=2.2.3",
     "streamlit>=1.41.1",
     "langchain-openai>=0.3.1",
+    "ruff>=0.9.6",
 ]
 
 [build-system]
@@ -27,7 +28,11 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "ipython>=8.32.0",
     "mypy>=1.14.1",
     "pytest>=8.3.4",
     "ruff>=0.9.1",
 ]
+
+[tool.ruff]
+src = ["src"]
